@@ -3,3 +3,5 @@ pydantic==1.9
 pymongo[srv]==3.11.0
 python-dotenv==0.19.2
 pytest==7.0.1
+pyTelegramBotAPI==4.9.0
+python_jose==3.3.0
