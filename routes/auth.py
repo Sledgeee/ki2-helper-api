@@ -1,4 +1,5 @@
 import random
+import db
 from fastapi import APIRouter, status, Request, Response, Body, BackgroundTasks
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -15,9 +16,9 @@ router = APIRouter(tags=["auth"], prefix="/auth")
              response_description="Login user",
              status_code=status.HTTP_200_OK,
              response_class=JSONResponse)
-async def login(request: Request, background_tasks: BackgroundTasks, login_body: Login = Body(...)):
-    if (admin := request.app.database["admins"].find_one({"username": login_body.username})) is not None:
-        request.app.database["login_attempts"].delete_many({"user_id": admin["user_id"]})
+async def login(background_tasks: BackgroundTasks, login_body: Login = Body(...)):
+    if (admin := db.admins.find_one({"username": login_body.username})) is not None:
+        db.login_attempts.delete_many({"user_id": admin["user_id"]})
 
         otp = random.randint(100000, 999999)
         login_attempt = LoginAttempt(
@@ -25,7 +26,7 @@ async def login(request: Request, background_tasks: BackgroundTasks, login_body:
             otp=otp
         )
         login_attempt = jsonable_encoder(login_attempt)
-        new_attempt = request.app.database["login_attempts"].insert_one(login_attempt)
+        new_attempt = db.login_attempts.insert_one(login_attempt)
 
         background_tasks.add_task(
             send_otp,
@@ -40,13 +41,12 @@ async def login(request: Request, background_tasks: BackgroundTasks, login_body:
 @router.post("/check-otp",
              response_description="Check OTP",
              status_code=status.HTTP_200_OK)
-async def check_otp(request: Request,
-                    response: JSONResponse,
+async def check_otp(response: Response,
                     background_tasks: BackgroundTasks,
                     login_attempt: LoginAttempt = Body(...)):
-    attempt = request.app.database["login_attempts"].find_one({"_id": login_attempt.id})
+    attempt = db.login_attempts.find_one({"_id": login_attempt.id})
     if attempt is not None and attempt['otp'] == login_attempt.otp:
-        background_tasks.add_task(request.app.database["login_attempts"].delete_one, {"_id": login_attempt.id})
+        background_tasks.add_task(db.login_attempts.delete_one, {"_id": login_attempt.id})
         user = create_user(login_attempt.user_id)
         payload = JwtPayload(
             sub=str(user["user_id"]),
@@ -56,14 +56,18 @@ async def check_otp(request: Request,
         )
         token = create_access_token(payload)
         response.set_cookie(
-            key="AUTHORIZED",
-            value=str(True),
-            expires=REFRESH_TOKEN_EXPIRE_MINUTES * 60
+            key="AUTH",
+            value="true",
+            max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+            samesite='none',
+            secure=True
         )
         response.set_cookie(
             key="REFRESH_TOKEN",
             value=create_refresh_token(str(user["user_id"])),
-            expires=REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+            max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+            secure=True,
+            samesite='none',
             httponly=True
         )
         return {"success": True, "user": user, "token": token}
@@ -75,19 +79,18 @@ async def check_otp(request: Request,
              response_description="Register admin",
              status_code=status.HTTP_201_CREATED,
              response_class=JSONResponse)
-async def register(request: Request, admin: Admin = Body(...)):
-    if request.app.database["admins"].find_one({"user_id": admin.user_id}):
+async def register(admin: Admin = Body(...)):
+    if db.admins.find_one({"user_id": admin.user_id}):
         return {"message": "account exists"}
 
-    if request.app.database["admins"].find_one({"username": admin.username}):
+    if db.admins.find_one({"username": admin.username}):
         return {"message": "username taken"}
 
     admin = jsonable_encoder(admin)
-    new_admin = request.app.database["admins"].insert_one(admin)
-    created_admin = request.app.database["admins"].find_one(
+    new_admin = db.admins.insert_one(admin)
+    created_admin = db.admins.find_one(
         {"_id": new_admin.inserted_id}
     )
-
     return created_admin
 
 
@@ -105,9 +108,18 @@ async def refresh(request: Request, response: Response):
             )
             token = create_access_token(payload)
             response.set_cookie(
+                key="AUTH",
+                value="true",
+                samesite="none",
+                secure=True,
+                max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60
+            )
+            response.set_cookie(
                 key="REFRESH_TOKEN",
-                value=create_refresh_token(str(user_id)),
-                expires=REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+                value=create_refresh_token(str(user["user_id"])),
+                max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+                samesite="none",
+                secure=True,
                 httponly=True
             )
             return {"token": token}
@@ -119,11 +131,15 @@ async def refresh(request: Request, response: Response):
              status_code=status.HTTP_200_OK)
 async def logout(response: Response):
     response.set_cookie(
-        key="AUTHORIZED",
-        max_age=0
+        key="AUTH",
+        max_age=0,
+        samesite="none",
+        secure=True,
     )
     response.set_cookie(
         key="REFRESH_TOKEN",
         max_age=0,
+        samesite="none",
+        secure=True,
         httponly=True
     )

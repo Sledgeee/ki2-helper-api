@@ -1,8 +1,7 @@
 import os
 
-# from dotenv import load_dotenv
-
-# load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 
 MONGO_CONNECTION = os.getenv("MONGO_CONNECTION")
 DB_NAME = os.getenv("DB_NAME")

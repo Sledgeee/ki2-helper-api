@@ -1,4 +1,4 @@
-fastapi[all]==0.75.0
+fastapi==0.89.1
 pydantic==1.9
 pymongo[srv]==3.11.0
 python-dotenv==0.19.2
