@@ -1,4 +1,6 @@
 import uuid
+import random
+from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field
 
@@ -80,8 +82,8 @@ class CronUpdate(BaseModel):
 
 class Birthday(BaseModel):
     id: str = Field(default_factory=uuid.uuid4, alias="_id")
-    date: str = Field(...)
     student_name: str = Field(...)
+    date: str = Field(...)
 
     class Config:
         allow_population_by_field_name = True
@@ -138,7 +140,7 @@ class Lesson(BaseModel):
     short_name: str = Field(...)
     type: str = Field(...)
     teacher: str = Field(...)
-    zoom: str = Field(...)
+    zoom: str = Field(default="немає")
 
     class Config:
         allow_population_by_field_name = True
@@ -332,17 +334,28 @@ class Login(BaseModel):
         }
 
 
+def gen_otp():
+    return random.randint(100000, 999999)
+
+
 class LoginAttempt(BaseModel):
     id: str = Field(default_factory=uuid.uuid4, alias="_id")
     user_id: int = Field(...)
-    otp: int = Field(...)
+    username: str = Field(...)
+    otp: int = Field(default_factory=gen_otp)
+    is_magic: bool = Field(default=False)
+    message_id: int = Field(default=0)
+    attempt_date: str = Field(default_factory=datetime.utcnow)
 
     class Config:
         allow_population_by_field_name = True
         schema_extra = {
             "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
             "user_id": 537259225,
-            "otp": 202451
+            "otp": 202451,
+            "is_magic": False,
+            "message_id": -1523552,
+            "attempt_date": "30.01.2023 00:50:23"
         }
 
 
@@ -350,13 +363,15 @@ class Admin(BaseModel):
     id: str = Field(default_factory=uuid.uuid4, alias="_id")
     user_id: int = Field(...)
     username: str = Field(...)
+    role: str = Field(default="manager")
 
     class Config:
         allow_population_by_field_name = True
         schema_extra = {
             "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
             "user_id": 537259225,
-            "username": "panelusername"
+            "username": "panelusername",
+            "role": "manager"
         }
 
 
