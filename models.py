@@ -1,7 +1,7 @@
 import uuid
 import random
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Union
 from pydantic import BaseModel, Field
 
 
@@ -383,3 +383,25 @@ class BulkDelete(BaseModel):
         schema_extra = {
             "ids": ["066de609-b04a-4b30-b46c-32537c7f1f6e", "066de609-b04a-4b30-b46c-78273l1j8j1b"]
         }
+
+
+EitherModel = Union[
+        Birthday,
+        Lesson,
+        Playlist,
+        Schedule,
+        Teacher,
+        Week,
+        Cron
+    ]
+
+
+EitherUpdate = Union[
+        BirthdayUpdate,
+        LessonUpdate,
+        PlaylistUpdate,
+        ScheduleUpdate,
+        TeacherUpdate,
+        WeekUpdate,
+        CronUpdate
+    ]

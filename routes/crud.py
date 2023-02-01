@@ -1,29 +1,11 @@
 import db
-import models
 from fastapi import APIRouter, Body, Response, HTTPException, status, Depends
 from fastapi.encoders import jsonable_encoder
-from typing import List, Union, Literal
+from typing import Union, Literal, List
 from security import authorized
+from models import EitherModel, EitherUpdate, BulkDelete, Admin, Timetable
 
 router = APIRouter(tags=["crud"], prefix="/crud")
-
-Crud = Union[
-    models.Birthday,
-    models.Lesson,
-    models.Playlist,
-    models.Schedule,
-    models.Teacher,
-    models.Week
-]
-
-CrudUpdate = Union[
-    models.BirthdayUpdate,
-    models.LessonUpdate,
-    models.PlaylistUpdate,
-    models.ScheduleUpdate,
-    models.TeacherUpdate,
-    models.WeekUpdate
-]
 
 Collection = Literal[
     "birthdays",
@@ -31,14 +13,18 @@ Collection = Literal[
     "playlists",
     "schedule",
     "teachers",
-    "week"
+    "week",
+    "cron"
 ]
+
+ExtendedCollection = Union[Collection, Literal["admins", "timetable"]]
+ExtendedEitherModel = Union[EitherModel, Admin, Timetable]
 
 
 @router.post("/{collection}/",
-             response_description="Create a new item",
-             status_code=status.HTTP_201_CREATED, response_model=Crud)
-async def create_item(collection: Collection, item: Crud = Body(...), auth=Depends(authorized)):
+             response_description="Create a new item", response_model=EitherModel,
+             status_code=status.HTTP_201_CREATED)
+async def create_item(collection: Collection, item: EitherModel = Body(...), auth=Depends(authorized)):
     item = jsonable_encoder(item)
     new_item = db.db[collection].insert_one(item)
     created_item = db.db[collection].find_one(
@@ -47,31 +33,27 @@ async def create_item(collection: Collection, item: Crud = Body(...), auth=Depen
     return created_item
 
 
-@router.get("/{collection}/", response_description="List all items", response_model=List[Union[Crud, models.Admin]])
-async def list_items(collection: Union[Collection, Literal["admins", "timetable"]]):
+@router.get("/{collection}/", response_description="List all items", response_model=List[ExtendedEitherModel])
+async def list_items(collection: ExtendedCollection):
     items = list(db.db[collection].find())
     return items
 
 
-@router.get("/{collection}/{_id}/", response_description="Get a single item by id", response_model=Crud)
-async def find_item(collection: Collection, _id: str):
+@router.get("/{collection}/{_id}/", response_description="Get a single item by id", response_model=ExtendedEitherModel)
+async def find_item(collection: ExtendedCollection, _id: str):
     if (item := db.db[collection].find_one({"_id": _id})) is not None:
         return item
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Item with ID {_id} not found")
 
 
-@router.patch("/{collection}/{_id}/", response_description="Update an item", response_model=Crud)
-async def update_item(collection: Collection, _id: str, update: CrudUpdate = Body(...), auth=Depends(authorized)):
-    update = {k: v for k, v in update.dict().items() if v is not None}
-
-    if len(update) >= 1:
-        update_result = db.db[collection].update_one(
-            {"_id": _id}, {"$set": update}
-        )
-
-        if update_result.modified_count == 0:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Item with ID {_id} not found")
+@router.put("/{collection}/{_id}/", response_description="Update an item")
+async def update_item(collection: Collection, _id: str, update=Body(...), auth=Depends(authorized)):
+    update_result = db.db[collection].update_one(
+        {"_id": _id}, {"$set": jsonable_encoder(update)}
+    )
+    if update_result.modified_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Item with ID {_id} not found")
 
     if (existing_item := db.db[collection].find_one({"_id": _id})) is not None:
         return existing_item
@@ -91,7 +73,7 @@ async def delete_item(collection: Collection, _id: str, response: Response, auth
 
 
 @router.post("/{collection}/bulk-delete/", response_description="Delete many items")
-async def delete_many_items(collection: Collection, response: Response, bulk: models.BulkDelete = Body(...),
+async def delete_many_items(collection: Collection, response: Response, bulk: BulkDelete = Body(...),
                             auth=Depends(authorized)):
     delete_result = db.db[collection].delete_many({"_id": {
         "$in": bulk.ids

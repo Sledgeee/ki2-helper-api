@@ -2,7 +2,6 @@ import requests
 import db
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes.cron import router as cron_router
 from routes.auth import router as auth_router
 from routes.admin import router as admin_router
 from routes.crud import router as crud_router
@@ -39,6 +38,5 @@ def cron(event):
 
 app.include_router(schedule_router)
 app.include_router(crud_router)
-app.include_router(cron_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
