@@ -21,9 +21,9 @@ async def schedule_all():
 
 @router.get("/filtered/{week_type}", response_description="List schedule by week type", response_model=List[Schedule])
 async def schedule_by_week(week_type):
-    schedule = list(db.schedule.find({"$or": [{"week_type": week_type}, {"week_type": "-"}]})
-                    .sort("number")
-                    .sort("day_number"))
+    schedule = (db.schedule.find({"$or": [{"week_type": week_type}, {"week_type": "-"}]})
+                .sort("number")
+                .sort("day_number"))
     return schedule
 
 
@@ -31,8 +31,7 @@ async def schedule_by_week(week_type):
             response_model=List[Schedule])
 async def schedule_by_day(week_type):
     now = datetime.now(tz=pytz.timezone('Europe/Kiev'))
-    if (schedule := db.schedule.find({"day_number": now.weekday() + 1,
-                                      "$or": [{"week_type": week_type}, {"week_type": "-"}]})) is not None:
-        return schedule
-
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Schedule not found")
+    schedule = (db.schedule.find({"day_number": now.weekday() + 1,
+                                  "$or": [{"week_type": week_type}, {"week_type": "-"}]})
+                .sort("number"))
+    return schedule
