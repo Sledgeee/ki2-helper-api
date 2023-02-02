@@ -265,17 +265,14 @@ class Timetable(BaseModel):
         }
 
 
-class ScheduleItem(BaseModel):
-    number: int = Field(...)
-    week_type: str = Field(...)
-    lesson: Lesson = Field(...)
-
-
 class Schedule(BaseModel):
     id: str = Field(default_factory=uuid.uuid4, alias="_id")
     day: str = Field(...)
     day_number: int = Field(...)
-    items: List[ScheduleItem] = Field(...)
+    number: int = Field(...)
+    week_type: str = Field(...)
+    cabinet: str = Field(...)
+    lesson: Lesson = Field(...)
 
     class Config:
         allow_population_by_field_name = True
@@ -283,44 +280,41 @@ class Schedule(BaseModel):
             "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
             "day": "Понеділок",
             "day_number": 1,
-            "items": [
-                {
-                    "number": 2,
-                    "week_type": "Чисельник",
-                    "lesson": {
-                        "name": "Lesson 1",
-                        "short_name": "L1",
-                        "type": "пр.",
-                        "teacher": "Іванов І.І.",
-                        "zoom": "link"
-                    }
-                }
-            ]
+            "number": 2,
+            "week_type": "Чисельник",
+            "cabinet": "1-208",
+            "lesson": {
+                "name": "Lesson 1",
+                "short_name": "L1",
+                "type": "пр.",
+                "teacher": "Іванов І.І.",
+                "zoom": "link"
+            }
         }
 
 
 class ScheduleUpdate(BaseModel):
     day: Optional[str]
     day_number: Optional[int]
-    items: Optional[List[ScheduleItem]]
+    number: Optional[int]
+    week_type: Optional[str]
+    cabinet: Optional[str]
+    lesson: Optional[Lesson]
 
     class Config:
         schema_extra = {
             "day": "Понеділок",
             "day_number": 1,
-            "items": [
-                {
-                    "number": 3,
-                    "week_type": "Чисельник",
-                    "lesson": {
-                        "name": "Lesson 1",
-                        "short_name": "L1",
-                        "type": "пр.",
-                        "teacher": "Іванов І.І.",
-                        "zoom": "link"
-                    }
-                }
-            ]
+            "cabinet": "1-208",
+            "number": 3,
+            "week_type": "Чисельник",
+            "lesson": {
+                "name": "Lesson 1",
+                "short_name": "L1",
+                "type": "пр.",
+                "teacher": "Іванов І.І.",
+                "zoom": "link"
+            }
         }
 
 

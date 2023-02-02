@@ -3,7 +3,7 @@ from fastapi import APIRouter, Body, Response, HTTPException, status, Depends
 from fastapi.encoders import jsonable_encoder
 from typing import Union, Literal, List
 from security import authorized
-from models import EitherModel, EitherUpdate, BulkDelete, Admin, Timetable
+from models import EitherModel, BulkDelete, Admin, Timetable
 
 router = APIRouter(tags=["crud"], prefix="/crud")
 
