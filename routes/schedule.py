@@ -28,7 +28,7 @@ async def schedule_by_week(week_type):
 
 
 @router.get("/filtered/today/{week_type}", response_description="List schedule by today and week type",
-            response_model=Schedule)
+            response_model=List[Schedule])
 async def schedule_by_day(week_type):
     now = datetime.now(tz=pytz.timezone('Europe/Kiev'))
     if (schedule := db.schedule.find({"day_number": now.weekday() + 1,
