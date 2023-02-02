@@ -31,8 +31,8 @@ async def schedule_by_week(week_type):
             response_model=Schedule)
 async def schedule_by_day(week_type):
     now = datetime.now(tz=pytz.timezone('Europe/Kiev'))
-    if (schedule := db.schedule.find_one({"day_number": now.weekday() + 1,
-                                          "$or": [{"week_type": week_type}, {"week_type": "-"}]})) is not None:
+    if (schedule := db.schedule.find({"day_number": now.weekday() + 1,
+                                      "$or": [{"week_type": week_type}, {"week_type": "-"}]})) is not None:
         return schedule
 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Schedule not found")
