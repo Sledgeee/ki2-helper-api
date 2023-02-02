@@ -26,9 +26,9 @@ async def count_docs():
 
 @router.get("/filtered/{week_type}", response_description="List schedule by week type", response_model=List[Schedule])
 async def schedule_by_week(week_type):
-    schedule = (db.schedule.find({"$or": [{"week_type": week_type}, {"week_type": "-"}]})
-                .sort("number")
-                .sort("day_number"))
+    schedule = list(db.schedule.find({"$or": [{"week_type": week_type}, {"week_type": "-"}]})
+                    .sort("number")
+                    .sort("day_number"))
     return schedule
 
 
@@ -36,7 +36,7 @@ async def schedule_by_week(week_type):
             response_model=List[Schedule])
 async def schedule_by_day(week_type):
     now = datetime.now(tz=pytz.timezone('Europe/Kiev'))
-    schedule = (db.schedule.find({"day_number": now.weekday() + 1,
-                                  "$or": [{"week_type": week_type}, {"week_type": "-"}]})
-                .sort("number"))
+    schedule = list(db.schedule.find({"day_number": now.weekday() + 1,
+                                      "$or": [{"week_type": week_type}, {"week_type": "-"}]})
+                    .sort("number"))
     return schedule
