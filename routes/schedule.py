@@ -1,7 +1,7 @@
 import pytz
 import db
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter
 from typing import List
 from models import Schedule
 
@@ -17,6 +17,11 @@ async def schedule_all():
         item_for_print['lesson'] = item['lesson']['short_name'] + ' ' + item['lesson']['type']
         schedule_to_print.append(item_for_print)
     return schedule_to_print
+
+
+@router.get("/count", response_description="Count documents", response_model=int)
+async def count_docs():
+    return db.schedule.count({})
 
 
 @router.get("/filtered/{week_type}", response_description="List schedule by week type", response_model=List[Schedule])
