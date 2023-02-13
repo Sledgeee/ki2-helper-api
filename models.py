@@ -399,3 +399,19 @@ EitherUpdate = Union[
         WeekUpdate,
         CronUpdate
     ]
+
+
+class ScheduledEvent(BaseModel):
+    id: str = Field(default_factory=uuid.uuid4, alias="_id")
+    name: str = Field(...)
+    description: str = Field(...)
+    date: str = Field(...)
+
+    class Config:
+        allow_population_by_field_name = True
+        schema_extra = {
+            "_id": "066de609-b04a-4b30-b46c-32537c7f1f6e",
+            "name": "Test event",
+            "description": "Any info, including links or other",
+            "date": "08.02.2023 15:00"
+        }
