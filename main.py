@@ -6,6 +6,7 @@ from routes.auth import router as auth_router
 from routes.admin import router as admin_router
 from routes.crud import router as crud_router
 from routes.schedule import router as schedule_router
+from routes.events import router as events_router
 
 from deta import App
 
@@ -37,6 +38,7 @@ def cron(event):
 
 
 app.include_router(schedule_router)
+app.include_router(events_router)
 app.include_router(crud_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
