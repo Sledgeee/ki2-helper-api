@@ -15,9 +15,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "http://ki2helper.pp.ua", "https://ki2helper.pp.ua",
-        "http://ki2admin.deta.dev", "https://ki2admin.deta.dev",
-        "http://ki2helper.deta.dev", "https://ki2helper.deta.dev"
+        "http://ki2helper.pp.ua", "https://ki2helper.pp.ua"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -28,13 +26,6 @@ app.add_middleware(
 @app.on_event("shutdown")
 def shutdown_db_client():
     db.client.close()
-
-
-@app.lib.run()
-@app.lib.cron()
-def cron(event):
-    requests.post("https://ki2admin.deta.dev/ping")
-    requests.post("https://ki2helper.deta.dev/ping")
 
 
 app.include_router(schedule_router)
